@@ -47,6 +47,11 @@ This guide provides step-by-step instructions for deploying the Client Car Servi
    Start Command: npm start
    Plan: Free (or choose paid for better performance)
    ```
+   
+   **IMPORTANT**: 
+   - When Root Directory is set to `server`, the Start Command should be `npm start` (which runs `node index.js` from server/package.json)
+   - **DO NOT** use `node server/index.js` when Root Directory is `server`
+   - If you leave Root Directory empty, use Start Command: `npm start` (which runs `node server/index.js` from root)
 
 3. **Add Backend Environment Variables**:
    Go to "Environment" tab and add:

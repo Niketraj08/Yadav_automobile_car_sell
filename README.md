@@ -173,10 +173,15 @@ This guide covers deploying both **Frontend** and **Backend** as separate servic
 2. **Configure Backend Settings**:
    - **Name**: `yadav-automobile-backend` (or your preferred name)
    - **Environment**: `Node`
-   - **Root Directory**: `server` (important!)
+   - **Root Directory**: `server` ⚠️ **IMPORTANT!**
    - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
+   - **Start Command**: `npm start` (this runs `node index.js` from server directory)
    - **Plan**: Free tier (or higher for better performance)
+   
+   **⚠️ Critical Configuration Note**: 
+   - When Root Directory is set to `server`, the working directory is already the server folder
+   - Start Command should be: `npm start` (which executes `node index.js` from server/package.json)
+   - **DO NOT** use `node server/index.js` when Root Directory is `server` - this causes path errors!
 
 3. **Backend Environment Variables** (Add in Render dashboard):
    ```env
