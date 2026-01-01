@@ -35,6 +35,10 @@ const Contact = () => {
                         src="https://images.pexels.com/photos/7688336/pexels-photo-7688336.jpeg?auto=compress&cs=tinysrgb&w=1600"
                         alt="Contact Us"
                         className="w-full h-full object-cover opacity-30"
+                        onError={(e) => {
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwMCIgaGVpZ2h0PSI4MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Db250YWN0IFVzPC90ZXh0Pjwvc3ZnPg==';
+                            e.target.onError = null; // Prevent infinite loop
+                        }}
                     />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
@@ -111,8 +115,8 @@ const Contact = () => {
                                     value={formData.name}
                                     onChange={handleChange}
                                     className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition"
-                                    placeholder="John Doe"
-                                    required
+                                    placeholder="Yadav Automobile"
+                                    required   
                                 />
                             </div>
 
@@ -125,7 +129,7 @@ const Contact = () => {
                                         value={formData.email}
                                         onChange={handleChange}
                                         className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition"
-                                        placeholder="john@example.com"
+                                        placeholder="yadavautomobile@gmail.com"
                                         required
                                     />
                                 </div>
@@ -137,7 +141,7 @@ const Contact = () => {
                                         value={formData.phone}
                                         onChange={handleChange}
                                         className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary transition"
-                                        placeholder="+91 98765 43210"
+                                        placeholder="+91 7474747474"
                                         required
                                     />
                                 </div>

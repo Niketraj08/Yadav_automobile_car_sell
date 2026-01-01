@@ -11,6 +11,10 @@ const About = () => {
                         src="https://images.pexels.com/photos/1592384/pexels-photo-1592384.jpeg?auto=compress&cs=tinysrgb&w=1600"
                         alt="About Us Background"
                         className="w-full h-full object-cover opacity-30"
+                        onError={(e) => {
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwMCIgaGVpZ2h0PSI4MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5BYm91dCBVczwvdGV4dD48L3N2Zz4=';
+                            e.target.onError = null; // Prevent infinite loop
+                        }}
                     />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-dark to-transparent"></div>
@@ -45,6 +49,10 @@ const About = () => {
                             src="https://images.pexels.com/photos/3802510/pexels-photo-3802510.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
                             alt="Our Showroom"
                             className="rounded-lg shadow-2xl border border-gray-800"
+                            onError={(e) => {
+                                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI2MCIgaGVpZ2h0PSI3NTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMzYiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5PdXIgU2hvd3Jvb208L3RleHQ+PC9zdmc+';
+                                e.target.onError = null; // Prevent infinite loop
+                            }}
                         />
                         <div className="absolute -bottom-6 -left-6 bg-primary text-white p-6 rounded-lg shadow-xl border border-primary/50">
                             <p className="text-4xl font-bold">1000+</p>

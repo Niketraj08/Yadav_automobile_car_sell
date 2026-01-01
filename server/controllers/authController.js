@@ -2,7 +2,8 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+    const secret = 'car_services_jwt_secret_2024'; // Fixed secret for testing
+    return jwt.sign({ id }, secret, {
         expiresIn: '30d',
     });
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
+import RazorpayModal from '../components/RazorpayModal';
+import RazorpaySuccessModal from '../components/RazorpaySuccessModal';
 import { FaCar, FaCreditCard, FaCheckCircle, FaCalendarAlt, FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 
 const BookingCheckout = () => {
@@ -25,14 +27,8 @@ const BookingCheckout = () => {
         preferredTime: ''
     });
 
-    const [paymentData, setPaymentData] = useState({
-        cardNumber: '',
-        cardName: '',
-        expiryDate: '',
-        cvv: '',
-        paymentMethod: 'card' // card, upi, netbanking
-    });
-
+    const [showRazorpayModal, setShowRazorpayModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [orderDetails, setOrderDetails] = useState(null);
 
     useEffect(() => {
@@ -43,6 +39,33 @@ const BookingCheckout = () => {
             navigate(`/login?redirect=/booking/${id}?type=${bookingType}`);
             return;
         }
+
+        // Validate token exists
+        if (!userInfo.token) {
+            console.error('No token found in userInfo');
+            localStorage.removeItem('userInfo');
+            navigate(`/login?redirect=/booking/${id}?type=${bookingType}`);
+            return;
+        }
+
+        // Validate token expiry (simple check)
+        try {
+            const payload = JSON.parse(atob(userInfo.token.split('.')[1]));
+            const currentTime = Date.now() / 1000;
+            if (payload.exp && payload.exp < currentTime) {
+                console.error('Token expired');
+                localStorage.removeItem('userInfo');
+                navigate(`/login?redirect=/booking/${id}?type=${bookingType}`);
+                return;
+            }
+        } catch (error) {
+            console.error('Invalid token format');
+            localStorage.removeItem('userInfo');
+            navigate(`/login?redirect=/booking/${id}?type=${bookingType}`);
+            return;
+        }
+
+        console.log('User authenticated:', { name: userInfo.name, email: userInfo.email });
 
         fetchCar();
         // Auto-fill user data if logged in
@@ -55,7 +78,7 @@ const BookingCheckout = () => {
 
     const fetchCar = async () => {
         try {
-            const { data } = await axios.get(`/api/cars/${id}`);
+            const { data } = await api.get(`/api/cars/${id}`);
             setCar(data);
         } catch (error) {
             console.error(error);
@@ -68,9 +91,6 @@ const BookingCheckout = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handlePaymentChange = (e) => {
-        setPaymentData({ ...paymentData, [e.target.name]: e.target.value });
-    };
 
     const handleStep1Submit = (e) => {
         e.preventDefault();
@@ -109,7 +129,7 @@ const BookingCheckout = () => {
                 } : {}
             };
 
-            const { data } = await axios.post('/api/bookings', bookingPayload, config);
+            const { data } = await api.post('/api/bookings', bookingPayload, config);
 
             // Create display order object from response
             const order = {
@@ -129,8 +149,14 @@ const BookingCheckout = () => {
             setOrderDetails(order);
             setStep(3);
         } catch (error) {
-            console.error(error);
-            alert(error.response?.data?.message || 'Error creating booking');
+            console.error('Booking creation error:', error);
+            if (error.response?.status === 401) {
+                alert('Authentication failed. Please log in again.');
+                localStorage.removeItem('userInfo');
+                navigate('/login');
+            } else {
+                alert(error.response?.data?.message || 'Error creating booking. Please try again.');
+            }
         }
     };
 
@@ -138,6 +164,62 @@ const BookingCheckout = () => {
     if (!car) return <div className="min-h-screen bg-dark text-white flex items-center justify-center">Car not found</div>;
 
     const amount = bookingType === 'buy' ? car.price : 5000;
+
+    const handleRazorpayPaymentSuccess = async () => {
+        try {
+            // Create the booking after successful payment
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${userInfo.token}`,
+                },
+            };
+
+            const bookingPayload = {
+                car: car._id,
+                bookingType: bookingType,
+                amount: bookingType === 'buy' ? car.price : 5000,
+                customerDetails: {
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    pincode: formData.pincode
+                },
+                paymentMethod: 'razorpay',
+                testDriveDetails: bookingType === 'test-drive' ? {
+                    date: formData.preferredDate,
+                    time: formData.preferredTime
+                } : {}
+            };
+
+            const { data } = await api.post('/api/bookings', bookingPayload, config);
+
+            // Create order details for success modal
+            const order = {
+                bookingId: data._id,
+                type: data.type,
+                car: car,
+                customer: data.customerDetails,
+                payment: {
+                    method: 'Razorpay',
+                    amount: bookingType === 'buy' ? amount + 40000 : amount,
+                    status: 'Success'
+                },
+                date: new Date(data.createdAt).toLocaleDateString(),
+                time: new Date(data.createdAt).toLocaleTimeString()
+            };
+
+            setOrderDetails(order);
+            setShowSuccessModal(true);
+        } catch (error) {
+            console.error('Booking creation error:', error);
+            alert(error.response?.data?.message || 'Error creating booking');
+        }
+    };
 
     return (
         <div className="min-h-screen bg-dark text-text py-12 px-4">
@@ -176,9 +258,16 @@ const BookingCheckout = () => {
                                 {bookingType === 'buy' ? 'Purchase Summary' : 'Test Drive Booking'}
                             </h3>
                             <img
-                                src={car.images && car.images[0] ? (car.images[0].startsWith('http') ? car.images[0] : `${car.images[0]}`) : 'https://via.placeholder.com/400x300'}
+                                src={
+                                    car.images && car.images[0] && !car.images[0].includes('…') && car.images[0].length > 20 && !car.images[0].endsWith(':')
+                                        ? (car.images[0].startsWith('http') ? car.images[0] : `${car.images[0]}`)
+                                        : 'https://images.pexels.com/photos/1719648/pexels-photo-1719648.jpeg?auto=compress&cs=tinysrgb&w=800'
+                                }
                                 alt={car.name}
                                 className="w-full h-48 object-cover rounded-lg mb-4"
+                                onError={(e) => {
+                                    e.target.src = 'https://images.pexels.com/photos/1719648/pexels-photo-1719648.jpeg?auto=compress&cs=tinysrgb&w=800';
+                                }}
                             />
                             <h4 className="font-bold text-lg mb-2">{car.name}</h4>
                             <div className="space-y-2 text-sm text-gray-400 mb-4">
@@ -382,230 +471,73 @@ const BookingCheckout = () => {
                         )}
 
                         {step === 2 && (
-                            <div className="bg-dark-card rounded-xl border border-gray-800 p-8">
-                                <h2 className="text-3xl font-bold mb-6">Payment Details</h2>
-
-                                {/* Payment Method Selection */}
-                                <div className="mb-6">
-                                    <label className="block text-gray-400 mb-4 text-sm font-medium">Select Payment Method</label>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setPaymentData({ ...paymentData, paymentMethod: 'card' })}
-                                            className={`p-4 rounded-lg border-2 transition ${paymentData.paymentMethod === 'card' ? 'border-primary bg-primary/20' : 'border-gray-700 hover:border-gray-600'}`}
-                                        >
-                                            <FaCreditCard className="text-2xl mx-auto mb-2" />
-                                            <p className="text-sm">Card</p>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setPaymentData({ ...paymentData, paymentMethod: 'upi' })}
-                                            className={`p-4 rounded-lg border-2 transition ${paymentData.paymentMethod === 'upi' ? 'border-primary bg-primary/20' : 'border-gray-700 hover:border-gray-600'}`}
-                                        >
-                                            <span className="text-2xl mx-auto mb-2 block">₹</span>
-                                            <p className="text-sm">UPI</p>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setPaymentData({ ...paymentData, paymentMethod: 'netbanking' })}
-                                            className={`p-4 rounded-lg border-2 transition ${paymentData.paymentMethod === 'netbanking' ? 'border-primary bg-primary/20' : 'border-gray-700 hover:border-gray-600'}`}
-                                        >
-                                            <span className="text-2xl mx-auto mb-2 block">🏦</span>
-                                            <p className="text-sm">Net Banking</p>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <form onSubmit={handlePaymentSubmit} className="space-y-6">
-                                    {paymentData.paymentMethod === 'card' && (
-                                        <>
-                                            <div>
-                                                <label htmlFor="cardNumber" className="block text-gray-400 mb-2 text-sm font-medium">Card Number</label>
-                                                <input
-                                                    type="text"
-                                                    id="cardNumber"
-                                                    name="cardNumber"
-                                                    value={paymentData.cardNumber}
-                                                    onChange={handlePaymentChange}
-                                                    placeholder="1234 5678 9012 3456"
-                                                    maxLength="19"
-                                                    className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
-                                                    required
-                                                />
-                                                <p className="text-xs text-gray-500 mt-1">Demo: Use any 16-digit number</p>
-                                            </div>
-                                            <div>
-                                                <label htmlFor="cardName" className="block text-gray-400 mb-2 text-sm font-medium">Cardholder Name</label>
-                                                <input
-                                                    type="text"
-                                                    id="cardName"
-                                                    name="cardName"
-                                                    value={paymentData.cardName}
-                                                    onChange={handlePaymentChange}
-                                                    placeholder="John Doe"
-                                                    className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-6">
-                                                <div>
-                                                    <label htmlFor="expiryDate" className="block text-gray-400 mb-2 text-sm font-medium">Expiry Date</label>
-                                                    <input
-                                                        type="text"
-                                                        id="expiryDate"
-                                                        name="expiryDate"
-                                                        value={paymentData.expiryDate}
-                                                        onChange={handlePaymentChange}
-                                                        placeholder="MM/YY"
-                                                        maxLength="5"
-                                                        className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
-                                                        required
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label htmlFor="cvv" className="block text-gray-400 mb-2 text-sm font-medium">CVV</label>
-                                                    <input
-                                                        type="text"
-                                                        id="cvv"
-                                                        name="cvv"
-                                                        value={paymentData.cvv}
-                                                        onChange={handlePaymentChange}
-                                                        placeholder="123"
-                                                        maxLength="3"
-                                                        className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
-                                                        required
-                                                    />
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {paymentData.paymentMethod === 'upi' && (
-                                        <div>
-                                            <label htmlFor="upiId" className="block text-gray-400 mb-2 text-sm font-medium">UPI ID</label>
-                                            <input
-                                                type="text"
-                                                id="upiId"
-                                                placeholder="yourname@upi"
-                                                className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
-                                                required
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">Demo: Use any UPI format</p>
-                                        </div>
-                                    )}
-
-                                    {paymentData.paymentMethod === 'netbanking' && (
-                                        <div>
-                                            <label htmlFor="bankSelect" className="block text-gray-400 mb-2 text-sm font-medium">Select Bank</label>
-                                            <select
-                                                id="bankSelect"
-                                                className="w-full bg-dark-light border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-primary"
-                                                required
-                                            >
-                                                <option value="">Choose Bank</option>
-                                                <option value="sbi">State Bank of India</option>
-                                                <option value="hdfc">HDFC Bank</option>
-                                                <option value="icici">ICICI Bank</option>
-                                                <option value="axis">Axis Bank</option>
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    <div className="bg-yellow-900/20 border border-yellow-600/50 rounded-lg p-4 text-yellow-200 text-sm">
-                                        <p className="font-bold mb-1">🔒 Demo Payment Gateway</p>
-                                        <p>This is a simulated payment. No actual charges will be made.</p>
-                                    </div>
-
-                                    <div className="flex gap-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => setStep(1)}
-                                            className="flex-1 bg-dark-light hover:bg-gray-700 border border-gray-600 text-white font-bold py-4 rounded-lg transition duration-300"
-                                        >
-                                            Back
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            className="flex-1 bg-primary hover:bg-secondary text-white font-bold py-4 rounded-lg transition duration-300"
-                                        >
-                                            Pay ₹ {(bookingType === 'buy' ? amount + 40000 : amount).toLocaleString('en-IN')}
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        )}
-
-                        {step === 3 && orderDetails && (
                             <div className="bg-dark-card rounded-xl border border-gray-800 p-8 text-center">
-                                <div className="bg-green-900/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <FaCheckCircle className="text-6xl text-green-500" />
+                                <div className="mb-6">
+                                    <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <span className="text-white text-2xl font-bold">₹</span>
+                                    </div>
+                                    <h2 className="text-2xl font-bold mb-2">Complete Your Payment</h2>
+                                    <p className="text-gray-400">
+                                        Secure payment powered by Razorpay
+                                    </p>
                                 </div>
-                                <h2 className="text-3xl font-bold mb-4">
-                                    {bookingType === 'buy' ? 'Purchase Successful!' : 'Test Drive Booked!'}
-                                </h2>
-                                <p className="text-gray-400 mb-8">
-                                    {bookingType === 'buy'
-                                        ? 'Your order has been confirmed. We will contact you shortly for delivery arrangements.'
-                                        : 'Your test drive has been scheduled. We look forward to seeing you!'}
-                                </p>
 
-                                <div className="bg-dark-light rounded-lg p-6 mb-8 text-left">
-                                    <h3 className="font-bold mb-4 text-center">Order Details</h3>
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">Booking ID:</span>
-                                            <span className="font-mono text-primary">{orderDetails.bookingId}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">Vehicle:</span>
-                                            <span>{orderDetails.car.name}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">Customer:</span>
-                                            <span>{orderDetails.customer.name}</span>
-                                        </div>
-                                        {bookingType === 'test-drive' && (
-                                            <>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-400">Date:</span>
-                                                    <span>{formData.preferredDate}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-400">Time:</span>
-                                                    <span>{formData.preferredTime}</span>
-                                                </div>
-                                            </>
-                                        )}
-                                        <div className="flex justify-between pt-2 border-t border-gray-700">
-                                            <span className="text-gray-400">Amount Paid:</span>
-                                            <span className="text-primary font-bold">₹ {orderDetails.payment.amount.toLocaleString('en-IN')}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-gray-400">Payment Status:</span>
-                                            <span className="text-green-500 font-bold">{orderDetails.payment.status}</span>
-                                        </div>
+                                <div className="bg-dark-light rounded-lg p-6 mb-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-gray-400">Total Amount:</span>
+                                        <span className="text-2xl font-bold text-white">
+                                            ₹{(bookingType === 'buy' ? amount + 40000 : amount).toLocaleString('en-IN')}
+                                        </span>
+                                    </div>
+                                    <div className="text-sm text-gray-400">
+                                        {bookingType === 'buy' ? 'Vehicle purchase with fees' : 'Test drive booking'}
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => navigate('/cars')}
-                                        className="flex-1 bg-dark-light hover:bg-gray-700 border border-gray-600 text-white font-bold py-3 rounded-lg transition duration-300"
-                                    >
-                                        Browse More Cars
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/')}
-                                        className="flex-1 bg-primary hover:bg-secondary text-white font-bold py-3 rounded-lg transition duration-300"
-                                    >
-                                        Go Home
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => setShowRazorpayModal(true)}
+                                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-4 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl mb-4"
+                                >
+                                    Pay with Razorpay
+                                </button>
+
+                                <button
+                                    onClick={() => setStep(1)}
+                                    className="w-full bg-dark-light hover:bg-gray-700 border border-gray-600 text-white font-bold py-3 rounded-lg transition duration-300"
+                                >
+                                    ← Back to Details
+                                </button>
                             </div>
                         )}
+
                     </div>
                 </div>
             </div>
+
+            {/* Razorpay Payment Modal */}
+            <RazorpayModal
+                isOpen={showRazorpayModal}
+                onClose={() => setShowRazorpayModal(false)}
+                amount={bookingType === 'buy' ? amount + 40000 : amount}
+                carName={car?.name}
+                customerName={formData.name}
+                onPaymentSuccess={() => {
+                    setShowRazorpayModal(false);
+                    handleRazorpayPaymentSuccess();
+                }}
+            />
+
+            {/* Payment Success Modal */}
+            <RazorpaySuccessModal
+                isOpen={showSuccessModal}
+                onClose={() => setShowSuccessModal(false)}
+                amount={bookingType === 'buy' ? amount + 40000 : amount}
+                transactionId={`RZP${Date.now()}`}
+                onContinue={() => {
+                    setShowSuccessModal(false);
+                    navigate('/cars');
+                }}
+            />
         </div>
     );
 };

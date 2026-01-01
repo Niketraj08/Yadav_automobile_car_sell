@@ -190,7 +190,19 @@ const ManageCars = () => {
                         {cars.map(car => (
                             <tr key={car._id} className="hover:bg-dark-light/50 transition">
                                 <td className="px-6 py-4">
-                                    <img src={car.images && car.images[0] ? (car.images[0].startsWith('http') ? car.images[0] : `${car.images[0]}`) : ''} alt={car.name} className="w-16 h-10 object-cover rounded" />
+                                    <img
+                                        src={
+                                            car.images && car.images[0] && !car.images[0].includes('…') && car.images[0].length > 20 && !car.images[0].endsWith(':')
+                                                ? (car.images[0].startsWith('http') ? car.images[0] : `${car.images[0]}`)
+                                                : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTBlMGUwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltZzwvdGV4dD48L3N2Zz4='
+                                        }
+                                        alt={car.name}
+                                        className="w-16 h-10 object-cover rounded"
+                                        onError={(e) => {
+                                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTBlMGUwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltZzwvdGV4dD48L3N2Zz4=';
+                                            e.target.onError = null; // Prevent infinite loop
+                                        }}
+                                    />
                                 </td>
                                 <td className="px-6 py-4 font-medium">{car.name}</td>
                                 <td className="px-6 py-4 text-gray-400">{car.brand}</td>
@@ -373,6 +385,10 @@ const ManageCars = () => {
                                                     src={image.startsWith('http') ? image : `${image}`}
                                                     alt={`Preview ${index + 1}`}
                                                     className="h-32 w-full object-cover rounded border-2 border-gray-600 group-hover:border-primary transition"
+                                                    onError={(e) => {
+                                                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTBlMGUwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkJyb2tlbiBJbWFnZTwvdGV4dD48L3N2Zz4=';
+                                                        e.target.onError = null; // Prevent infinite loop
+                                                    }}
                                                 />
                                                 <button
                                                     type="button"

@@ -43,7 +43,22 @@ const simpleCars = [
         images: ['https://images.pexels.com/photos/17208155/pexels-photo-17208155.jpeg?auto=compress&cs=tinysrgb&w=800'],
         status: 'Available'
     },
+
     {
+        name : 'i20',
+        brand : 'Hyundai',
+        price : 900000,
+        year : 2025,
+        fuelType : 'petrol',
+        transmission : 'manual',
+        mileage : 18,
+        description : 'A compact hatchback with modern features and stylish design, perfect for city driving.',
+        images : ['https://images.pexels.com/photos/17081113/pexels-photo-17081113.jpeg?auto=compress&cs=tinysrgb&w=800'],
+        status : 'unAvailable'
+    },
+    {
+
+
         name: 'Honda City V',
         brand: 'Honda',
         price: 1300000,

@@ -86,11 +86,14 @@ const Bookings = () => {
                                 <tr key={booking._id} className="hover:bg-dark-light/50 transition">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            {booking.car && booking.car.images && booking.car.images[0] && (
+                                            {booking.car && booking.car.images && booking.car.images[0] && !booking.car.images[0].includes('…') && booking.car.images[0].length > 20 && !booking.car.images[0].endsWith(':') && (
                                                 <img
                                                     src={booking.car.images[0].startsWith('http') ? booking.car.images[0] : `${booking.car.images[0]}`}
                                                     alt={booking.car.name}
                                                     className="w-10 h-10 rounded object-cover"
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                    }}
                                                 />
                                             )}
                                             <span className="font-medium">{booking.car?.name || 'Deleted Car'}</span>
@@ -148,11 +151,14 @@ const Bookings = () => {
                                 <tr key={booking._id} className="hover:bg-dark-light/50 transition">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            {booking.car && booking.car.images && booking.car.images[0] && (
+                                            {booking.car && booking.car.images && booking.car.images[0] && !booking.car.images[0].includes('…') && booking.car.images[0].length > 20 && !booking.car.images[0].endsWith(':') && (
                                                 <img
                                                     src={booking.car.images[0].startsWith('http') ? booking.car.images[0] : `${booking.car.images[0]}`}
                                                     alt={booking.car.name}
                                                     className="w-10 h-10 rounded object-cover"
+                                                    onError={(e) => {
+                                                        e.target.style.display = 'none';
+                                                    }}
                                                 />
                                             )}
                                             <span className="font-medium">{booking.car?.name}</span>

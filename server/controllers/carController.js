@@ -5,29 +5,68 @@ const Car = require('../models/Car');
 // @access  Public
 const getCars = async (req, res) => {
     try {
-        const { keyword, brand, fuelType, minPrice, maxPrice, type } = req.query; // type might mean something else, assuming Body Type or similar if I added it.
+        const {
+            carName,
+            brand,
+            minPrice,
+            maxPrice,
+            fuelType,
+            transmission,
+            minYear,
+            maxYear,
+            minMileage,
+            maxMileage
+        } = req.query;
 
         let query = {};
 
-        if (keyword) {
-            query.name = { $regex: keyword, $options: 'i' };
-        }
-        if (brand) {
-            query.brand = brand;
-        }
-        if (fuelType) {
-            query.fuelType = fuelType;
+        // Car name search (case-insensitive partial match)
+        if (carName) {
+            query.name = { $regex: carName, $options: 'i' };
         }
 
+        // Brand search (case-insensitive partial match)
+        if (brand) {
+            query.brand = { $regex: brand, $options: 'i' };
+        }
+
+        // Price range filter
         if (minPrice || maxPrice) {
             query.price = {};
             if (minPrice) query.price.$gte = Number(minPrice);
             if (maxPrice) query.price.$lte = Number(maxPrice);
         }
 
-        const cars = await Car.find(query);
+        // Fuel type filter
+        if (fuelType) {
+            query.fuelType = fuelType;
+        }
+
+        // Transmission filter
+        if (transmission) {
+            query.transmission = transmission;
+        }
+
+        // Year range filter
+        if (minYear || maxYear) {
+            query.year = {};
+            if (minYear) query.year.$gte = Number(minYear);
+            if (maxYear) query.year.$lte = Number(maxYear);
+        }
+
+        // Mileage range filter
+        if (minMileage || maxMileage) {
+            query.mileage = {};
+            if (minMileage) query.mileage.$gte = Number(minMileage);
+            if (maxMileage) query.mileage.$lte = Number(maxMileage);
+        }
+
+        console.log('Car query:', query);
+
+        const cars = await Car.find(query).sort({ createdAt: -1 }); // Sort by newest first
         res.json(cars);
     } catch (error) {
+        console.error('Error fetching cars:', error);
         res.status(500).json({ message: error.message });
     }
 };

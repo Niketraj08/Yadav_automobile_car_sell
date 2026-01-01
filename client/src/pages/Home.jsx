@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 import { FaSearch, FaCar, FaStar, FaShieldAlt } from 'react-icons/fa';
 
 const Home = () => {
@@ -18,7 +18,7 @@ const Home = () => {
 
         const fetchCars = async () => {
             try {
-                const { data } = await axios.get('/api/cars');
+                const { data } = await api.get('/api/cars');
                 setFeaturedCars(data.slice(0, 6));
             } catch (error) {
                 console.error('Error fetching cars:', error);
@@ -48,6 +48,10 @@ const Home = () => {
                         src="https://images.pexels.com/photos/707046/pexels-photo-707046.jpeg?auto=compress&cs=tinysrgb&w=1600"
                         alt="Hero Background"
                         className="w-full h-full object-cover opacity-40"
+                        onError={(e) => {
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYwMCIgaGVpZ2h0PSI4MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDgiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5MdXh1cnkgQ2FyczwvdGV4dD48L3N2Zz4=';
+                            e.target.onError = null; // Prevent infinite loop
+                        }}
                     />
                 </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-white dark:from-dark to-transparent"></div>
@@ -130,7 +134,18 @@ const Home = () => {
                             {featuredCars.map(car => (
                                 <div key={car._id} className="bg-white dark:bg-dark-card rounded-xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-800 hover:border-primary/50 transition duration-300 group relative">
                                     <div className="relative h-48 overflow-hidden">
-                                        <img src={car.images && car.images[0] || 'https://via.placeholder.com/400x300'} alt={car.name} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                                        <img
+                                            src={
+                                                car.images && car.images[0] && !car.images[0].includes('…') && car.images[0].length > 20 && !car.images[0].endsWith(':')
+                                                    ? (car.images[0].startsWith('http') ? car.images[0] : `${car.images[0]}`)
+                                                    : 'https://images.pexels.com/photos/1719648/pexels-photo-1719648.jpeg?auto=compress&cs=tinysrgb&w=800'
+                                            }
+                                            alt={car.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+                                            onError={(e) => {
+                                                e.target.src = 'https://images.pexels.com/photos/1719648/pexels-photo-1719648.jpeg?auto=compress&cs=tinysrgb&w=800';
+                                            }}
+                                        />
                                         <div className="absolute top-4 right-4 bg-primary text-white text-xs font-bold px-2 py-1 rounded">
                                             {car.year}
                                         </div>

@@ -5,7 +5,9 @@
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
-        "dev": "nodemon index.js"
+        "dev": "nodemon index.js",
+        "fix-images": "node fix-broken-images.js",
+        "update-pexels": "node update-with-pexels.js"
     },
     "keywords": [],
     "author": "",
@@ -19,6 +21,7 @@
         "jsonwebtoken": "^9.0.3",
         "mongoose": "^9.0.2",
         "multer": "^2.0.2",
-        "nodemon": "^3.1.11"
+        "nodemon": "^3.1.11",
+        "razorpay": "^2.9.6"
     }
 }

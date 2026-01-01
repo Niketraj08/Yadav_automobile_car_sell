@@ -14,11 +14,18 @@ if (!fs.existsSync('./uploads')) {
 
 app.use(express.json());
 
-// CORS configuration - allow frontend URL from environment
+// CORS configuration
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: [
+        'http://localhost:5173', // Development frontend
+        'http://localhost:3000', // Alternative development port
+        'https://yadav-automobile-car-sell.onrender.com', // Production backend (same origin)
+        // Add your production frontend URL here when deployed
+        // 'https://your-frontend-domain.com'
+    ],
     credentials: true,
-    optionsSuccessStatus: 200
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 
@@ -38,9 +45,8 @@ app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
 const PORT = process.env.PORT || 5000;
 
-// Serve static assets in production (only if deploying as monolith)
-// Set SERVE_STATIC=true to enable serving frontend from backend
-if (process.env.NODE_ENV === 'production' && process.env.SERVE_STATIC === 'true') {
+// Serve static assets in production
+if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/dist')));
 
     app.get('*', (req, res) =>
