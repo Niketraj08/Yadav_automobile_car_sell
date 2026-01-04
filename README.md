@@ -209,7 +209,7 @@ This project is licensed under the ISC License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support or questions, please contact the development team or create an issue in the repository.
+For support or questions, please contact @niketrajkvs@gmail.com and  development team or create an issue in the repository.
 
 ---
 
