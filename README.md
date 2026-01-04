@@ -35,7 +35,7 @@ A full-stack web application for car services that allows users to browse, book,
 - **Express.js** - Web framework for Node.js
 - **MongoDB** - NoSQL database
 - **Mongoose** - MongoDB object modeling
-- **JWT** - JSON Web Token for authentication
+- **JWT** - JSON Web Token for authentication 
 - **bcryptjs** - Password hashing
 - **Cloudinary** - Image hosting and management
 - **Razorpay** - Payment gateway integration
